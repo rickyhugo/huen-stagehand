@@ -3,7 +3,6 @@ const A = std.mem.Allocator;
 const Io = std.Io;
 const Env = std.process.Environ.Map;
 const toml = @import("config/toml.zig");
-const builtin = @import("builtin");
 const unicode = @import("config/unicode_alphanumeric.zig");
 
 pub const VcsProvider = enum { git, jujutsu };
@@ -573,9 +572,10 @@ fn homeDir(a: A, env: *const Env) !?[]const u8 {
     return null;
 }
 
+/// `$XDG_CONFIG_HOME` when absolute, else `~/.config`, on every platform.
 fn platformDir(a: A, env: *const Env) !?[]const u8 {
-    if (builtin.os.tag != .macos) if (env.get("XDG_CONFIG_HOME")) |p| if (std.fs.path.isAbsolute(p)) return p;
-    if (try homeDir(a, env)) |h| return try std.fs.path.join(a, &.{ h, if (builtin.os.tag == .macos) "Library/Application Support" else ".config" });
+    if (env.get("XDG_CONFIG_HOME")) |p| if (std.fs.path.isAbsolute(p)) return p;
+    if (try homeDir(a, env)) |h| return try std.fs.path.join(a, &.{ h, ".config" });
     return null;
 }
 
@@ -772,6 +772,19 @@ test "enum tables, sequence structs, precise timestamps, and UTF-8 file conversi
     try std.testing.expectError(error.InvalidColor, toml.decode(Color, a, (try toml.parse(a, "x = {Indexed = '5'}")).table.get("x").?));
     try std.testing.expectEqualStrings("\xef\xbf\xbdA\xef\xbf\xbd", try utf8Lossy(a, "\xe1\x80A\xff"));
     try std.testing.expectEqualStrings("a\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbdb", try utf8Lossy(a, "a\xed\xa0\x80b"));
+}
+
+test "config directory is XDG_CONFIG_HOME or ~/.config on every platform" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var env: Env = .init(a);
+    try env.put("HOME", "/home/user");
+    try std.testing.expectEqualStrings("/home/user/.config", (try platformDir(a, &env)).?);
+    try env.put("XDG_CONFIG_HOME", "relative");
+    try std.testing.expectEqualStrings("/home/user/.config", (try platformDir(a, &env)).?);
+    try env.put("XDG_CONFIG_HOME", "/xdg");
+    try std.testing.expectEqualStrings("/xdg", (try platformDir(a, &env)).?);
 }
 
 test "clearing saved marks reveals exact marks inherited from the earlier location" {

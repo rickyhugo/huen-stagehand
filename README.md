@@ -70,11 +70,9 @@ stagehand config --excluded node_modules target
 stagehand config --full-path true
 ```
 
-The config is a TOML file:
-
-- Linux: `~/.config/stagehand/config.toml`
-- macOS: `~/Library/Application Support/stagehand/config.toml`
-- Anywhere you like: set `STAGEHAND_CONFIG_FILE`
+The config is a TOML file at `~/.config/stagehand/config.toml` on both macOS
+and Linux. `XDG_CONFIG_HOME` moves it, and `STAGEHAND_CONFIG_FILE` points it
+anywhere you like.
 
 The file also sets search depth, repository providers, bookmarks, startup
 sessions, picker colors, and key bindings:

@@ -19,8 +19,9 @@ zero-field `Pane`. The TOML parser still validates the entire source, including
 unused trailing values. Short sequences retain their indexed length diagnostic.
 
 `load` selects only `STAGEHAND_CONFIG_FILE` when present. Otherwise it loads
-`~/.config/stagehand/config.toml` and then the platform config location. Saving selects
-the override or platform location. Missing files are optional. Extension inference,
+`~/.config/stagehand/config.toml` and then `$XDG_CONFIG_HOME/stagehand/config.toml`
+when `XDG_CONFIG_HOME` is absolute. Without it, both are the same file, on macOS
+too. Saving selects the override or the second location. Missing files are optional. Extension inference,
 unregistered file extensions, a UTF-8 BOM, and lossy UTF-8 file decoding follow the
 reference's TOML-only config source.
 Optional sources also suppress stat, open, and read failures. Parser and decoder
