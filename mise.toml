@@ -4,7 +4,6 @@ hk = "2.12.0"
 jj = "0.38.0"
 tmux = "3.8"
 python = "3.14.7"
-gh = "2.103.3"
 
 [tasks.build]
 description = "Build the Zig executable"
@@ -84,7 +83,3 @@ run = "zig run scripts/package.zig -- verify"
 description = "Install the native Zig executable and notices"
 depends = ["build:release"]
 run = "sh scripts/install.sh"
-
-[tasks."release:draft"]
-description = "Create a draft release from checked archives"
-run = 'gh release create "$RELEASE_TAG" --verify-tag --draft --generate-notes artifacts/*'

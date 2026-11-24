@@ -10,8 +10,7 @@ mise trust
 mise install --locked
 ```
 
-mise pins Zig 0.17.1, hk 2.12.0, jj 0.38.0, tmux 3.8, Python 3.14.7,
-and gh 2.103.3. `mise.lock` records platform download checksums.
+mise pins Zig 0.17.1, hk 2.12.0, jj 0.38.0, tmux 3.8, and Python 3.14.7. `mise.lock` records platform download checksums.
 Rust is not part of the current toolchain.
 
 Use `mise run` for project tasks and `mise exec --` for other development
@@ -87,12 +86,8 @@ hk applies available formatting fixes before a commit.
 ## Workflows and packaging
 
 `.github/workflows/ci.yml` installs locked tools and calls `mise run ci` on
-Linux x86-64 and Apple Silicon. `release.yml` requires those checks before
-building and inspecting the four release archives.
-
-Pull requests and manual release dispatches upload artifacts only. Any pushed
-tag in `rickyhugo/huen-stagehand` creates a draft release after the gates
-pass. Publishing that draft is a separate action. Cargo publishing is removed.
+Linux x86-64 and Apple Silicon. There is no release workflow; build release
+archives locally with `mise run package`.
 
 See [packaging](packaging.md) for source installation, release commands,
 and platform verification limits.

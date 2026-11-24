@@ -3,7 +3,7 @@
 ## Build and checks
 
 `mise.toml` pins Zig 0.17.1, Python 3.14.7 (test harnesses only), hk 2.12.0, jj 0.38.0,
-tmux 3.8, and gh 2.103.3. `mise.lock` records upstream download checksums.
+and tmux 3.8. `mise.lock` records upstream download checksums.
 Use mise 2026.10.17 or newer.
 
 ```sh
@@ -23,14 +23,15 @@ on Intel Macs do not require hk.
 
 ## Release archives
 
+Archives are built locally; no workflow builds or publishes them.
 Releases are not versioned. An archive is named after its target only.
 
-| Archive target | Zig target | Native CI runner |
-| --- | --- | --- |
-| `aarch64-apple-darwin` | `aarch64-macos` | `macos-15` |
-| `x86_64-apple-darwin` | `x86_64-macos` | `macos-15-intel` |
-| `x86_64-unknown-linux-gnu` | `x86_64-linux-gnu.2.28` | `ubuntu-22.04` |
-| `x86_64-unknown-linux-musl` | `x86_64-linux-musl` | `ubuntu-24.04` |
+| Archive target | Zig target |
+| --- | --- |
+| `aarch64-apple-darwin` | `aarch64-macos` |
+| `x86_64-apple-darwin` | `x86_64-macos` |
+| `x86_64-unknown-linux-gnu` | `x86_64-linux-gnu.2.28` |
+| `x86_64-unknown-linux-musl` | `x86_64-linux-musl` |
 
 There is no Linux ARM64 release archive; build from source on that system.
 GNU builds select the glibc 2.28 ABI baseline. This does not prove execution
@@ -87,17 +88,8 @@ runtime helper is required.
 
 ## Workflows
 
-- `ci.yml`: full pinned tools and shared hk checks on Linux and Apple Silicon.
-- `release.yml`: shared CI checks must pass before archive jobs run.
-
-Archive jobs install only Zig; publication installs only gh.
-These jobs set `MISE_AUTO_INSTALL=false`
-so nested tasks cannot install unrelated tools.
-
-Pull requests and manual dispatches upload artifacts only. Any pushed tag
-in `rickyhugo/huen-stagehand` creates a draft release after all gates pass.
-Publishing the draft remains a separate action. Cargo publishing and
-Cargo-dist configuration have been removed.
+`ci.yml` installs the full pinned tools and runs the shared hk checks on Linux
+and Apple Silicon. There is no release workflow.
 
 ## Verification on 2026-11-13
 
