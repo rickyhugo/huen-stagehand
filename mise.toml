@@ -1,0 +1,91 @@
+[tools]
+zig = "0.17.1"
+hk = "2.12.0"
+jj = "0.38.0"
+tmux = "3.8"
+python = "3.14.7"
+gh = "2.103.3"
+
+[tasks.build]
+description = "Build the Zig executable"
+run = "zig build"
+
+[tasks."build:release"]
+description = "Build zig-out/bin/stagehand with ReleaseFast"
+run = "zig build -Doptimize=ReleaseFast"
+
+[tasks.test]
+description = "Run Zig tests"
+run = "zig build test"
+
+[tasks."test:adapters"]
+description = "Verify tmux arguments, command policies, and a private tmux lifecycle"
+run = "python3 src/app/check.py --real-tmux"
+
+[tasks."test:harness"]
+description = "Check test isolation and packaging policy"
+run = [
+  "python3 -m unittest discover -s tests/app -p 'test_*.py'",
+  "python3 -m unittest discover -s tests/terminal -p 'test_*.py'",
+  "python3 -m unittest discover -s tests/packaging -p 'test_*.py'",
+]
+
+[tasks."test:commands"]
+description = "Check CLI diagnostics, repository initialization, and session listing"
+depends = ["test:harness", "build:release"]
+run = [
+  "python3 src/cli/error_check.py --bin zig-out/bin/stagehand",
+  "python3 src/app/review_check.py --binary zig-out/bin/stagehand",
+]
+
+[tasks."test:terminal"]
+description = "Verify PTY and popup behavior, Unicode layout, and terminal cleanup"
+depends = ["test:harness", "build:release"]
+run = "python3 scripts/terminal_checks.py --binary zig-out/bin/stagehand --output .audit/terminal"
+
+[tasks."test:picker:regressions"]
+description = "Verify cancellation under blocked output and fragmented input"
+run = "python3 src/picker/regression-pty.py"
+
+[tasks.fmt]
+description = "Format Zig files through hk"
+run = "hk fix --all --step zig-fmt"
+
+[tasks."fmt:check"]
+description = "Check Zig formatting through hk"
+run = "hk check --all --step zig-fmt"
+
+[tasks."hooks:setup"]
+description = "Install repository-local hk hooks through mise"
+run = '''
+if [ "$(git rev-parse --git-dir)" != "$(git rev-parse --git-common-dir)" ]; then
+  echo "Install hooks from a standalone clone, not a linked worktree." >&2
+  exit 1
+fi
+hk install --mise
+'''
+
+[tasks.check]
+description = "Run all shared hk checks"
+run = "hk check --all"
+
+[tasks.ci]
+description = "Validate hk and run the shared checks"
+run = ["hk validate --deny-warnings", "hk check --all"]
+
+[tasks.package]
+description = "Build and inspect a Zig release archive"
+run = "python3 scripts/package.py build"
+
+[tasks."package:verify"]
+description = "Inspect a Zig release archive"
+run = "python3 scripts/package.py verify"
+
+[tasks.install]
+description = "Install the native Zig executable and notices"
+depends = ["build:release"]
+run = "sh scripts/install.sh"
+
+[tasks."release:draft"]
+description = "Create a draft release from checked archives"
+run = 'gh release create "$RELEASE_TAG" --verify-tag --draft --generate-notes artifacts/*'

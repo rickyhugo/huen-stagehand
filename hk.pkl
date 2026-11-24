@@ -1,0 +1,52 @@
+amends "package://github.com/jdx/hk/releases/download/v2.12.0/hk@2.12.0#/Config.pkl"
+
+import "package://github.com/jdx/hk/releases/download/v2.12.0/hk@2.12.0#/Builtins.pkl"
+
+min_hk_version = "2.12.0"
+
+hooks {
+  ["commit-msg"] {
+    steps {
+      ["conventional-commit"] = Builtins.check_conventional_commit
+    }
+  }
+}
+
+steps {
+  ["hk-config"] {
+    glob = List("hk.pkl", "mise.toml", "mise.lock")
+    check = "hk validate --deny-warnings"
+  }
+  ["test-harness"] {
+    check = "mise run test:harness"
+  }
+  ["zig-fmt"] {
+    glob = "*.zig"
+    check = "zig fmt --check {{files}}"
+    fix = "zig fmt {{files}}"
+  }
+  ["zig-test"] {
+    check = "mise run test"
+    depends = "zig-fmt"
+  }
+  ["zig-release"] {
+    check = "mise run build:release"
+    depends = "zig-test"
+  }
+  ["command-adapters"] {
+    check = "mise run test:adapters"
+    depends = "zig-test"
+  }
+  ["command-regressions"] {
+    check = "mise run test:commands"
+    depends = "zig-release"
+  }
+  ["terminal-regressions"] {
+    check = "mise run test:terminal"
+    depends = "command-regressions"
+  }
+  ["picker-regressions"] {
+    check = "mise run test:picker:regressions"
+    depends = "zig-test"
+  }
+}

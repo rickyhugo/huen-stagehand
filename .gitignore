@@ -2,3 +2,6 @@
 zig-out/
 zig-pkg/
 *.o
+/.audit/
+__pycache__/
+/target/

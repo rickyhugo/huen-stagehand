@@ -1,0 +1,52 @@
+# Process adapter
+
+`capture`, `inherit`, and `replace` accept literal argv without a shell. A nonzero exit or signal remains termination data.
+
+`capture` returns two slices allocated with the caller's allocator. The caller frees both slices. `MultiReader` drains stdout and stderr concurrently. Read or allocation errors cancel the drains, kill the child, and reap it. A successful wait makes deferred cleanup a no-op.
+
+On abnormal return or cancellation, `capture` and `inherit` send SIGKILL directly to their owned child PID, without a TERM grace period, and reap with cancellation blocked. Zig 0.17's `Child.kill` sends TERM and can wait forever when the child ignores it. Zig also clears `Child.id` on a canceled wait before reaping; the adapter retains ownership of that PID for abort cleanup. A child that exits before signaling is still reaped. Normal success, nonzero exits, and signal termination remain termination data. Abort cleanup preserves the original operation error. It does not signal process groups or unowned descendants.
+
+`inherit` preserves stdout and stderr. Both spawn operations apply the requested stdin mode, cwd, and environment.
+
+`replace` calls `std.process.replace`. It preserves the process ID. Zig 0.17 does not expose replacement stream options, so ignored stdin uses a POSIX descriptor adjustment. The adapter records stdin's open-or-closed state and descriptor flags before opening anything. An open stdin is saved with close-on-exec set. If opening `/dev/null` claims an originally closed fd 0, rollback owns that descriptor and clears its close-on-exec flag before replacement. Replacement also applies cwd before exec because Zig 0.17's non-Darwin POSIX backend ignores `ReplaceOptions.cwd`. If setup or replacement fails, the adapter restores stdin, its original descriptor flags, and cwd with cancellation blocked. Both restorations are attempted; restoration errors are returned. Callers must restore terminal state before replacement.
+
+`movePath` uses native rename first. If the destination is a directory, the final destination includes the source basename. Rename preserves native overwrite rules. A cross-device failure copies regular files, directories, symlinks, and FIFOs before removing the source. It replaces empty directories but does not merge trees. It rejects a destination inside the source.
+
+The copy context owns an allocator and a device/inode map that preserves hardlinks within the moved tree. Darwin uses libc `copyfile` with `COPYFILE_DATA`, `COPYFILE_XATTR`, and explicit no-follow flags. It does not request `COPYFILE_ACL` or `COPYFILE_STAT`. FIFOs use ACL and xattr APIs without opening or reading the FIFO. Linux copies data with native descriptors and preserves ACLs through their native xattrs. Both platforms preserve ownership, exact permissions, access and modification timestamps, and xattrs. Darwin also preserves resource forks and BSD file flags.
+
+Copies remain inside a private `0700` staging directory beside the destination. Inherited ACLs are removed from that directory before copying. The completed item replaces the destination by rename. Copy or metadata errors leave the source and existing destination untouched. Rollback clears immutable and append-only flags before ACLs and owner permissions inside staging. It does not follow symlinks or change the source or destination metadata. Cleanup errors are returned, not discarded. The source is removed only after preservation and destination replacement succeed. Other special file types return `UnsupportedFileType`. The fallback does not invoke `mv` or a shell.
+
+## Darwin ACL policy
+
+The copy preserves all source ACEs, including inherited entries, in their original order. Destination-inherited entries follow the source entries. A source ACL with `ACL_FLAG_NO_INHERIT` suppresses destination inheritance. Directory and file inheritance, `only_inherit`, and `limit_inherit` follow [Darwin's inheritance rules](https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/kern/kern_authorization.c#L794-L926). Destination inheritance travels separately through the copied tree, without granting access through the staging directory.
+
+Each copied inode has a pending final-metadata record with its path, stat snapshot, and owned ACL. All data, xattrs, and hardlinks finish before these records apply in child-before-parent order. Ownership, modes, timestamps, and ACLs precede file flags. An inherited deny-search ACL on one subtree therefore cannot block a later sibling's hardlink.
+
+This differs deliberately from [Apple's `copyfile_security`](https://github.com/apple-oss-distributions/copyfile/blob/9f91eb6ced021952278816cdc76ad68da8631ccb/copyfile.c#L3133-L3240), which drops inherited source ACEs. The Rust command invokes `mv`. [Apple's `mv`](https://github.com/apple-oss-distributions/file_cmds/blob/659a8a301e2acf0343f8b8673a154a2ca4d07084/mv/mv.c#L363-L370) uses that ACL behavior through `fcopyfile` for files and `cp -PRp` for directories. A macOS 26.6.2 APFS-to-APFS disk-image probe confirmed that `/bin/mv` removes inherited source deny and allow entries for both kinds. All four moves exited successfully. The native fallback retains those entries rather than losing source protections or grants. When the source has no inherited ACEs, destination inheritance matches native creation.
+
+## Darwin file flags
+
+`COPYFILE_STAT` installs file flags before it returns. Immutable and append-only flags can then block later metadata changes and rollback. The fallback applies flags last with `lchflags`, after its explicit metadata operations. It follows [copyfile's flag exclusions](https://github.com/apple-oss-distributions/copyfile/blob/9f91eb6ced021952278816cdc76ad68da8631ccb/copyfile_private.h). It retains the destination's compression flag because `copyfile` can preserve compression or copy uncompressed data.
+
+The fallback never clears source flags to permit deletion. After publication, an immutable or append-only source child can prevent source removal. The operation returns that error and retains the published copy. Source removal can be partial. APFS probes of `/bin/mv -f` also returned failure and retained both copies with their child flags intact. Flags on the staged root can prevent publication itself. That failure removes staging and preserves the existing destination.
+
+## Verification
+
+`mise exec -- zig test src/process.zig -lc` runs real-child tests. The helper is the test executable itself. `/bin/sh` is used only by tests.
+
+Coverage includes literal argv, cwd, environment inheritance and replacement, nonzero exits, signals, both output pipes beyond capacity, stdin modes, allocation failures, inherited streams, replacement PID, and failed-replacement restoration. Filesystem tests exercise the fallback directly on one filesystem. They verify contents, hardlinks, ownership, ACLs, xattrs, Darwin resource forks, timestamps, FIFO kind, and exact modes under umask `077`. Darwin ACL fixtures cover absent, inherited allow, inherited deny, and no-inherit ACLs on files and directories. Expected destination inheritance comes from objects created by the kernel, not from the copy implementation. Access checks verify inherited grants and denies before and after the move. A sibling-hardlink fixture inherits deny-search ACLs and verifies both hardlink identity and denied traversal. Flag fixtures exercise immutable and append-only files, directories, metadata, publication failures, and source-removal failures. Rollback preserves a flagged symlink target outside staging. A real rename failure against a nonempty destination also verifies rollback of a nonempty `0500` directory. An allocator checks staging privacy during a partial copy and injects an allocation failure.
+
+Replacement regressions alter stdin and descriptor limits only in isolated child helpers. They cover initially closed stdin, `FD_CLOEXEC`, failed exec, failed cwd changes, and descriptor exhaustion while saving stdin, opening `/dev/null`, or saving cwd. Setup-failure fixtures also check for leaked descriptors. Infinite-output allocation and cancellation fixtures run under the helper's 15-second output timeout and check that their subprocesses were reaped.
+
+TERM-resistant fixtures have a three-second helper timeout. They cover OOM during output capture, cancellation while draining both pipes, cancellation after pipe EOF while waiting for exit, and inherited-stream wait cancellation. The shell installs its TERM disposition before publishing its PID. Failed fixtures force-kill only that recorded PID so the test itself cannot leave the resistant child running.
+
+The output fault injector disables resize and remap, not just allocation. Zig 0.17.1's `FailingAllocator.fail_index` counts allocations separately from successful remaps. Linux's moving `mremap` can therefore grow output indefinitely without reaching the requested allocation failure. A finite-output regression supplies successful moving remaps on every host; without the resize-failure setting, capture unexpectedly succeeds instead of reporting the injected OOM.
+
+The real cross-device tests use `/dev/shm` on Linux. `STAGEHAND_TEST_CROSS_DEVICE_DIR` selects another writable filesystem. Without either location, those tests report a skip. On macOS, a temporary, unprivileged 64 MiB APFS disk image exercised the actual `CrossDevice` transition, metadata preservation, and the ACL fixtures. All 19 process tests passed with no skips. The image was detached and removed. HFS+ rounds timestamps to seconds and cannot pass the nanosecond preservation assertions. Linux x86_64 and aarch64 cross-compilation passed. Linux runtime checks remain unverified on this host.
+
+Parent verification also passed all 19 tests against an APFS image attached with
+`hdiutil attach -owners on`. The first run without that option failed the group-ID
+assertion because the mount ignored ownership. Ownership must be enabled for this
+preservation check. Both images were detached and removed.
+
+The metadata-order regressions reproduced on APFS before this fix. Sibling hardlinks returned `HardlinkFailed`. Immutable children returned `SetAclFailed` during rollback and left staging behind. Both also failed across the disk-image device boundary. With the fix, all 21 process tests passed with no skips on a fresh 64 MiB APFS image attached with `-owners on`. Linux x86_64 and aarch64 cross-compilation passed. Linux runtime verification remains open.
