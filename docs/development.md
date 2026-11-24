@@ -69,25 +69,30 @@ Run `mise run hooks:setup` once per standalone clone to install the hooks.
 MISE_AUTO_INSTALL=false mise run fmt
 MISE_AUTO_INSTALL=false mise run fmt:check
 MISE_AUTO_INSTALL=false mise run check
-MISE_AUTO_INSTALL=false mise run ci
+MISE_AUTO_INSTALL=false mise run check:harness
 ```
 
-`hk.pkl` defines checks shared by local hooks and CI: Zig formatting, module
-tests, a release build, harness isolation, packaging policy, command adapters,
-CLI/repository regressions, terminal checks, and picker regressions.
-`check` runs `hk check --all`. `ci` first validates hk with warnings denied,
-then runs the same check. Neither task runs Rust.
+`hk.pkl` defines the checks. There is no hosted CI. The default steps validate
+the hk config, check Zig formatting, and run `zig build test`, which includes
+the packaging policy tests. `check` and the pre-commit hook run only these.
+
+Steps in the `harness` profile run on demand through `check:harness`
+(`hk check --all --profile harness`): a release build, harness isolation,
+command adapters, CLI/repository regressions, terminal checks, and picker
+regressions. They take minutes and need tmux. Run them before a release or
+after changing terminal, tmux, or CLI behavior. Neither task runs Rust.
 
 To install hooks, run `mise run hooks:setup` from a standalone clone.
 The task refuses linked worktrees to protect the shared Git directory.
 It installs no global hooks. The launcher uses mise without shell activation.
-hk applies available formatting fixes before a commit.
+hk applies available formatting fixes before a commit. Git hooks live in the
+shared Git directory, so hooks installed from the standalone clone also run in
+its linked worktrees.
 
-## Workflows and packaging
+## Packaging
 
-`.github/workflows/ci.yml` installs locked tools and calls `mise run ci` on
-Linux x86-64 and Apple Silicon. There is no release workflow; build release
-archives locally with `mise run package`.
+There are no GitHub workflows. Build release archives locally with
+`mise run package`.
 
 See [packaging](packaging.md) for source installation, release commands,
 and platform verification limits.

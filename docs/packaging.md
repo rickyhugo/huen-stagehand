@@ -8,13 +8,15 @@ Use mise 2026.10.17 or newer.
 
 ```sh
 mise install --locked
-mise run ci
+mise run check
+mise run check:harness
 ```
 
-CI and local hooks use the same hk checks: formatting, Zig tests, harness
-isolation, packaging policy, command adapters, CLI/repository regressions,
-21 terminal/popup scenarios, and 16 focused picker regressions.
-Command and terminal checks use the release executable. Migration comparison
+`check` and the pre-commit hook run formatting and Zig tests, including the
+packaging policy tests. `check:harness` adds harness isolation, command
+adapters, CLI/repository regressions, 21 terminal/popup scenarios, and
+16 focused picker regressions. Command and terminal checks use the release
+executable. Migration comparison
 tools and fixtures were retired after verification and four-platform Nix success.
 
 hk 2.12.0 has no upstream Intel macOS binary. Full developer checks therefore
@@ -88,8 +90,7 @@ runtime helper is required.
 
 ## Workflows
 
-`ci.yml` installs the full pinned tools and runs the shared hk checks on Linux
-and Apple Silicon. There is no release workflow.
+There are no GitHub workflows. All checks run locally through hk.
 
 ## Verification on 2026-11-13
 

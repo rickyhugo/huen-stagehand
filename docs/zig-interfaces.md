@@ -251,8 +251,8 @@ pub fn movePath(io: Io, a: A, from: []const u8, to: []const u8) anyerror!void;
 
 `mise run build` installs stagehand. `mise run test` compiles every public domain declaration and Client method, then runs all module tests. Contract tests check optional collection presence, stable identity across reordered injection, and scalar cursor representation.
 
-`mise run fmt` formats Zig through hk. `mise run ci` validates hk, checks
-formatting, tests Zig, builds ReleaseFast, and runs harness isolation, command
-adapters, command regressions, terminal/popup checks, and focused picker
-regressions. Rust tooling was retired after compatibility passed.
+`mise run fmt` formats Zig through hk. `mise run check` validates hk, checks
+formatting, and tests Zig. `mise run check:harness` also builds ReleaseFast and
+runs harness isolation, command adapters, command regressions, terminal/popup
+checks, and focused picker regressions. Rust tooling was retired after compatibility passed.
 See [development](development.md) for commands and Rust reference reproduction.

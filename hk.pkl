@@ -12,13 +12,14 @@ hooks {
   }
 }
 
+// Top-level steps also form the pre-commit hook. Steps in the "harness"
+// profile are slow and run only on demand: `mise run check:harness`.
+local harness = List("harness")
+
 steps {
   ["hk-config"] {
     glob = List("hk.pkl", "mise.toml", "mise.lock")
     check = "hk validate --deny-warnings"
-  }
-  ["test-harness"] {
-    check = "mise run test:harness"
   }
   ["zig-fmt"] {
     glob = "*.zig"
@@ -29,23 +30,32 @@ steps {
     check = "mise run test"
     depends = "zig-fmt"
   }
+  ["test-harness"] {
+    profiles = harness
+    check = "mise run test:harness"
+  }
   ["zig-release"] {
+    profiles = harness
     check = "mise run build:release"
     depends = "zig-test"
   }
   ["command-adapters"] {
+    profiles = harness
     check = "mise run test:adapters"
     depends = "zig-test"
   }
   ["command-regressions"] {
+    profiles = harness
     check = "mise run test:commands"
     depends = "zig-release"
   }
   ["terminal-regressions"] {
+    profiles = harness
     check = "mise run test:terminal"
     depends = "command-regressions"
   }
   ["picker-regressions"] {
+    profiles = harness
     check = "mise run test:picker:regressions"
     depends = "zig-test"
   }

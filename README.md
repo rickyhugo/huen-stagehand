@@ -133,12 +133,15 @@ mise install --locked
 mise run hooks:setup
 mise run build
 mise run test
-mise run ci
+mise run check
+mise run check:harness
 ```
 
-Mise pins the development tools. hk runs shared local and CI checks for
-formatting, Zig tests, command behavior, terminal handling, and packaging.
-The commit hook enforces [Conventional Commits](https://www.conventionalcommits.org/).
+Mise pins the development tools. There is no hosted CI; hk runs the checks
+locally. `check` and the pre-commit hook run formatting and Zig tests.
+`check:harness` adds the slower command, terminal, and picker harnesses; run
+it on demand. The commit hook enforces
+[Conventional Commits](https://www.conventionalcommits.org/).
 
 Full hk checks run on Linux and Apple Silicon. Intel macOS supports source
 and archive builds; the pinned hk version has no Intel macOS binary.
