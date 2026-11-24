@@ -1,7 +1,10 @@
 # Terminal verification
 
-Historical reference report. Its comparison tools and linked artifacts are
-retained in commit `9fd6bbd2517606b7575ecf6bfdd2772e3400d2f1`.
+Historical reference report from before stagehand was imported into this
+repository. The Rust reference build, `scripts/benchmark.py`, the compatibility
+tests, and the result and evidence files it cites were not imported. They were
+retained in the pre-import repository at commit
+`9fd6bbd2517606b7575ecf6bfdd2772e3400d2f1`.
 See [development](development.md) for current terminal checks.
 
 This report records independent verification for the Rust-to-Zig rewrite. It does not verify a Zig binary.
@@ -20,7 +23,7 @@ The runs used mise's Python 3.14.7 and tmux 3.8 on 2026-11-13.
 ## Terminal results
 
 The reference run recorded 14 passes and three explicit baseline defects.
-The [terminal results](../tests/terminal/rust-baseline/terminal-results.json) contain each verdict.
+The terminal results contain each verdict.
 
 The passing assertions cover:
 
@@ -49,7 +52,7 @@ The three known defects are not passing checks:
 
 `--require-improvements` converts those findings to failures.
 A separate strict run returned exit code 1 and failed exactly these three checks.
-Its [results](../tests/terminal/rust-baseline/strict-results.json) are retained.
+Its results were retained in the pre-import repository.
 The option is the improvement gate for a candidate that must fix the known defects.
 Without the option, known defects remain visible as `BASELINE_DEFECT`, not `PASS`.
 Unrelated setup or readiness failures always remain failures.
@@ -127,19 +130,7 @@ All 17 other checks pass in both modes.
 The 16 terminal-driver unit tests and six compatibility-isolation unit tests pass.
 No benchmark was run for this coverage change.
 
-The separate run directories are `$TMPDIR/opencode/tms-rust-coverage-followup` and `$TMPDIR/opencode/tms-rust-coverage-strict`.
-Each contains `results.json`, raw `.vt` output, and JSON transcripts.
-These directories are local evidence, not additions to the historical archive.
 The executable SHA-256 remains `d3e5deaaa76f4f4208bdaa9e52759dfaff5c14788742fffe08b8ef784b93a1d0`.
-
-The added coverage was run with:
-
-```sh
-mise exec -- python -m unittest discover -s tests/terminal -v
-mise exec -- python -m unittest discover -s tests/compat -v
-mise exec -- python scripts/terminal_checks.py --binary /Users/hugo.englund/personal/tms-zig-terminal-tests/target/release/tms --output "$TMPDIR/opencode/tms-rust-coverage-followup"
-mise exec -- python scripts/terminal_checks.py --binary /Users/hugo.englund/personal/tms-zig-terminal-tests/target/release/tms --require-improvements --output "$TMPDIR/opencode/tms-rust-coverage-strict"
-```
 
 ## Timing results
 
@@ -147,7 +138,7 @@ The verdict is **INCONCLUSIVE**.
 The original reference run has no Zig comparison or measured application limiter.
 These are observed end-to-end PTY latencies, not evidence of an implementation speedup.
 
-The [benchmark results](../tests/terminal/rust-baseline/benchmark-results.json) retain seven samples, their ranges, artifact hashes, work counts, and errors.
+The benchmark results retain seven samples, their ranges, artifact hashes, work counts, and errors.
 Each sample discovers 1,000 real empty Git repositories.
 It waits for all 1,000 candidates, writes one complete unique query, and waits for the selected result.
 The selected-result assertion excludes the input prompt.
@@ -200,7 +191,7 @@ subsequently passed seven focused PTY regressions and all 21 full application ch
 That executable's SHA-256 was
 `e4ca174dd5431532339fd8628048cc88c38389be4c64b2474e1dff5063c7e2f0`.
 
-The [integrated comparison](../tests/terminal/zig-integration/benchmark-results.json)
+The integrated comparison
 records seven alternating release samples per implementation over 1,000 repositories.
 Every sample verified exact candidate counts, one selected result, and cleanup.
 There were no errors.
@@ -216,31 +207,12 @@ difference. These observations establish completed work, not a speedup.
 
 ### Reference reproduction
 
-The following commands reproduce the reference checks from this worktree:
-
-```sh
-mise exec -- cargo build --release --locked
-mise exec -- python -m unittest discover -s tests/terminal -v
-mise exec -- python scripts/terminal_checks.py --binary target/release/tms --output "$TMPDIR/opencode/tms-rust-terminal"
-mise exec -- python scripts/terminal_checks.py --binary target/release/tms --require-improvements --pty-only --output "$TMPDIR/opencode/tms-rust-strict"
-mise exec -- python scripts/benchmark.py --rust target/release/tms --release-builds --samples 7 --candidates 1000 --output "$TMPDIR/opencode/tms-rust-benchmark"
-```
-
-The strict Rust command intentionally exits with code 1.
-`TMS_BIN` can replace `--binary`.
-`--pty-only` omits the popup checks.
-Output directories are overwritten by a repeated run with the same case names.
-
-The candidate invocations accept independently built release artifacts:
-
-```sh
-mise exec -- python scripts/terminal_checks.py --binary /absolute/zig-out/bin/tms --require-improvements --output "$TMPDIR/opencode/tms-zig-terminal"
-mise exec -- python scripts/benchmark.py --rust /absolute/rust-release/tms --zig /absolute/zig-out/bin/tms --release-builds --samples 7 --candidates 1000 --output "$TMPDIR/opencode/tms-comparison"
-```
-
-The committed [evidence archive](../tests/terminal/rust-baseline/evidence.tar.gz) contains terminal output, JSON transcripts, strict-run output, benchmark transcripts, and the same-binary comparator control.
-The readable result files beside it are copies of the archived results.
-The original run directories are under `/private/var/folders/zj/d5cklrtd0cb5nl3s7hrd558r0000gp/T/opencode/`.
+The reference and comparison runs used `cargo build --release --locked`,
+`scripts/terminal_checks.py`, and the retired `scripts/benchmark.py`.
+The strict Rust run intentionally exited with code 1.
+The current `scripts/terminal_checks.py` keeps `--pty-only` but has no
+`--require-improvements` or `BASELINE_DEFECT` mode; every check must pass.
+The Rust build and benchmark are not reproducible from this repository.
 
 ## Limits
 

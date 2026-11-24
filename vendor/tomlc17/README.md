@@ -39,8 +39,8 @@ infinity and other conversion errors remain invalid.
 Patched `tomlc17.c` SHA-256:
 `6e22c4543009586445f118467d297b189d35a6c5eab2969f6aba31063bbe79b6`.
 
-`src/cli/check.py` compares leap-second exports and invalid time rejection
-against the Rust reference. Tests in `src/config.zig` cover year-zero dates,
+The retired `src/cli/check.py` migration runner compared leap-second exports
+and invalid time rejection against the Rust reference. Tests in `src/config.zig` cover year-zero dates,
 signed-zero underflow, and continued rejection of invalid dates and overflow.
 These tests run through `zig build test` without a Rust oracle.
 

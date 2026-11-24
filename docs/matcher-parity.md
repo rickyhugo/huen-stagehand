@@ -76,22 +76,13 @@ mise exec -- zig fmt --check src/matcher/*.zig
 mise exec python@3 -- python3 scripts/generate-matcher-tables.py
 ```
 
-The temporary oracle used the foundation worker's production driver, not another checked-in driver:
+The differential run used a temporary Zig oracle driver and the Rust
+`compat_oracle` example, driven by `src/matcher/check-parity.py`. Those tools
+were retired with the other migration comparison tools and are not in this
+repository. See [verification checkpoint](compatibility.md).
 
-```sh
-SCRATCH=/private/var/folders/zj/d5cklrtd0cb5nl3s7hrd558r0000gp/T/opencode
-ORACLE_SOURCE=/Users/hugo.englund/personal/tms-zig-foundation/src/oracle.zig
-RUST_ORACLE=/Users/hugo.englund/personal/tmux-sessionizer/target/debug/examples/compat_oracle
-mise exec -- zig build-exe --dep matcher \
-    -Mroot="$ORACLE_SOURCE" -Mmatcher=src/matcher/engine.zig \
-    -O ReleaseSafe -femit-bin="$SCRATCH/tms-matcher-oracle"
-mise exec python@3 -- python3 src/matcher/check-parity.py \
-    --oracle "$SCRATCH/tms-matcher-oracle" --rust-oracle "$RUST_ORACLE"
-```
-
-After integration, `ORACLE_SOURCE` can refer to `src/oracle.zig`.
 The production matcher imports only Zig standard-library modules and its own files.
-Rust and Python are development-only verification and table-generation tools.
+Rust and Python are development-only table-generation tools.
 
 ## Remaining verification
 

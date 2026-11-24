@@ -87,23 +87,9 @@ mise exec -- zig build -Dtomlc17=vendor/tomlc17
 mise exec -- zig build test -Dtomlc17=vendor/tomlc17
 ```
 
-Build the scoped driver with local domain modules:
-
-```sh
-mise exec -- python3 src/cli/build_driver.py
-```
-
-`--domains /absolute/path/to/src` selects integrated session, repository, tmux,
-and process modules without changing this worktree's files.
-
-Compare with a separately built Rust reference:
-
-```sh
-mise exec -- python3 src/cli/check.py \
-  --bin .zig-cache/config-driver \
-  --rust /absolute/path/to/target/debug/tms \
-  --dynamic --jj
-```
+The Rust comparisons below used `src/cli/build_driver.py` and
+`src/cli/check.py`. Both were retired after migration and are not in this
+repository. See [verification checkpoint](compatibility.md).
 
 Executed results:
 
@@ -172,7 +158,7 @@ Review verification on macOS:
 - `MISE_AUTO_INSTALL=false mise exec -- zig build test --summary all` passed
   all build steps: 105 tests passed and eight skipped. All 16 configuration
   tests passed.
-- The unchanged `src/cli/check.py --dynamic --jj` runner passed against the
+- The then-unchanged `src/cli/check.py --dynamic --jj` runner passed against the
   retained Rust release, including 815 completion probes and 40 jj cases.
 - Supplemental review comparisons passed 25 exports or decoder errors, two
   byte-preserving failed mutations, unreadable-source selection, and four
