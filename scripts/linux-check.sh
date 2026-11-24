@@ -61,7 +61,6 @@ run non-utf8 zig test -lc --dep config --dep process -Mroot=src/repos.zig \
 run modules zig build test -j2 --summary all
 run harness-app python3 -m unittest discover -s tests/app -p 'test_*.py'
 run harness-terminal python3 -m unittest discover -s tests/terminal -p 'test_*.py'
-run packaging python3 -m unittest discover -s tests/packaging -p 'test_*.py'
 run adapters python3 src/app/check.py --real-tmux
 run picker-regressions python3 src/picker/regression-pty.py
 run build zig build -j2 -Doptimize=ReleaseFast --summary all

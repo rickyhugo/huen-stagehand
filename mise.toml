@@ -15,7 +15,7 @@ description = "Build zig-out/bin/stagehand with ReleaseFast"
 run = "zig build -Doptimize=ReleaseFast"
 
 [tasks.test]
-description = "Run Zig tests"
+description = "Run Zig module and packaging policy tests"
 run = "zig build test"
 
 [tasks."test:adapters"]
@@ -23,11 +23,10 @@ description = "Verify tmux arguments, command policies, and a private tmux lifec
 run = "python3 src/app/check.py --real-tmux"
 
 [tasks."test:harness"]
-description = "Check test isolation and packaging policy"
+description = "Check test isolation"
 run = [
   "python3 -m unittest discover -s tests/app -p 'test_*.py'",
   "python3 -m unittest discover -s tests/terminal -p 'test_*.py'",
-  "python3 -m unittest discover -s tests/packaging -p 'test_*.py'",
 ]
 
 [tasks."test:commands"]
@@ -75,11 +74,11 @@ run = ["hk validate --deny-warnings", "hk check --all"]
 
 [tasks.package]
 description = "Build and inspect a Zig release archive"
-run = "python3 scripts/package.py build"
+run = "zig run scripts/package.zig -- build"
 
 [tasks."package:verify"]
 description = "Inspect a Zig release archive"
-run = "python3 scripts/package.py verify"
+run = "zig run scripts/package.zig -- verify"
 
 [tasks.install]
 description = "Install the native Zig executable and notices"

@@ -18,11 +18,11 @@ then build from source:
 git clone https://github.com/rickyhugo/huen-stagehand.git
 cd huen-stagehand
 mise trust
-mise install --locked zig python
+mise install --locked zig
 MISE_AUTO_INSTALL=false mise run install
 ```
 
-This uses pinned Zig 0.17.1 and Python. The installer places `stagehand` in
+This uses pinned Zig 0.17.1. The installer places `stagehand` in
 `$HOME/.local/bin` and notices in `$HOME/.local/share/licenses/stagehand`.
 Add `$HOME/.local/bin` to `PATH`.
 

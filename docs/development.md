@@ -20,7 +20,7 @@ installation to prevent commands from installing missing tools.
 
 hk 2.12.0 has no Intel macOS binary. Run the full shared checks on Apple Silicon
 or Linux. Intel Mac source installs and archive builds do not need hk.
-For source installation only, install `mise install --locked zig python`, then
+For source installation only, install `mise install --locked zig`, then
 run `MISE_AUTO_INSTALL=false mise run install`.
 
 Outside mise, the runtime needs Git and tmux on `PATH`. jj is optional unless a
@@ -36,7 +36,8 @@ MISE_AUTO_INSTALL=false mise run build:release
 ```
 
 These tasks run `zig build`, `zig build test`, and
-`zig build -Doptimize=ReleaseFast`. The application is `zig-out/bin/stagehand`.
+`zig build -Doptimize=ReleaseFast`. `zig build test` also runs the packaging
+policy tests in `scripts/package.zig`. The application is `zig-out/bin/stagehand`.
 
 Focused checks:
 
@@ -46,7 +47,6 @@ MISE_AUTO_INSTALL=false mise run test:adapters
 MISE_AUTO_INSTALL=false mise run test:commands
 MISE_AUTO_INSTALL=false mise run test:terminal
 MISE_AUTO_INSTALL=false mise run test:picker:regressions
-MISE_AUTO_INSTALL=false mise exec -- python3 -m unittest discover -s tests/packaging -p 'test_*.py'
 ```
 
 Command regressions check CLI errors, configuration preservation, shell
@@ -55,8 +55,8 @@ checks run 21 real PTY/popup scenarios. The picker regression task runs 16
 focused scenarios. Command and terminal tasks build the release executable.
 
 Packaging policy tests use an independent notice list. They check real archive
-writing, verification, source installation, and negative cases. Compilation is
-stubbed in those tests; they do not prove native executable behavior.
+writing, verification, notice installation, and negative cases against a
+fixture tree. They do not compile or run the application.
 
 ## Check a change
 

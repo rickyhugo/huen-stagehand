@@ -11,5 +11,5 @@ cd "$(dirname "$0")/.."
 test -x zig-out/bin/stagehand
 mkdir -p "$prefix/bin"
 install -m 755 zig-out/bin/stagehand "$prefix/bin/stagehand"
-python3 scripts/package.py notices --dest "$prefix/share/licenses/stagehand"
+zig run scripts/package.zig -- notices --dest "$prefix/share/licenses/stagehand"
 printf 'Installed %s/bin/stagehand. Add %s/bin to PATH.\n' "$prefix" "$prefix"

@@ -69,6 +69,11 @@ pub fn build(b: *std.Build) void {
         if (target.result.abi.isMusl()) tests.linkage = .static;
         test_step.dependOn(&b.addRunArtifact(tests).step);
     }
+    const packaging = b.addTest(.{ .root_module = b.createModule(.{
+        .root_source_file = b.path("scripts/package.zig"),
+        .target = b.graph.host,
+    }) });
+    test_step.dependOn(&b.addRunArtifact(packaging).step);
 }
 
 fn module(

@@ -2,7 +2,7 @@
 
 ## Build and checks
 
-`mise.toml` pins Zig 0.17.1, Python 3.14.7, hk 2.12.0, jj 0.38.0,
+`mise.toml` pins Zig 0.17.1, Python 3.14.7 (test harnesses only), hk 2.12.0, jj 0.38.0,
 tmux 3.8, and gh 2.103.3. `mise.lock` records upstream download checksums.
 Use mise 2026.10.17 or newer.
 
@@ -53,30 +53,31 @@ Verification checks checksums, the exact member set, permissions, executable
 format and CPU, and notice bytes. `--smoke` also runs `--help` on a matching
 native host. This smoke check does not replace behavioral tests.
 
-`scripts/package.py` declares the required source notices explicitly in
-`REQUIRED_SOURCE_NOTICES`. Missing files and symlinks fail packaging. Additional
+`scripts/package.zig` declares the required source notices explicitly in
+`required_source_notices`. Missing files and symlinks fail packaging. Additional
 conventionally named notices are discovered too. This manifest includes
 `src/config/UNICODE-LICENSE`; filename-prefix discovery alone cannot find it.
 Archives and source installation use the same notice installer/list.
 
-Run the independent packaging policy regression:
+The packaging policy tests in `scripts/package.zig` run with `zig build test`:
 
 ```sh
-MISE_AUTO_INSTALL=false mise exec -- python3 -m unittest discover -s tests/packaging -p 'test_*.py'
+MISE_AUTO_INSTALL=false mise run test
 ```
 
-Its expected notice paths and bytes do not come from `notices()`. It checks
-archive contents and source installation under a spaced prefix, including the
-config Unicode notice. It also rejects an archive with that notice removed
-after recomputing the checksum. Other negative cases cover altered notice bytes,
-member sets/types/modes, checksums, CPU, foreign smoke requests, and version tags.
-Compilation is stubbed in these policy tests. Use the native `package --smoke`
-task above for a real release build and execution check.
+Their expected notice paths and bytes come from a separate list in the tests,
+not from `notices()`. They build a fixture tree, then check archive contents and
+notice installation under a spaced prefix, including the config Unicode notice.
+They also reject an archive with that notice removed after recomputing the
+checksum. Other negative cases cover altered or empty notice bytes, member
+sets/types/modes, checksums, CPU, archive names, symlinked notices, and foreign
+smoke requests. These tests do not compile the application. Use the native
+`package --smoke` task above for a real release build and execution check.
 
 ## Source installation
 
 ```sh
-mise install --locked zig python
+mise install --locked zig
 MISE_AUTO_INSTALL=false mise run install -- "$HOME/.local"
 ```
 
@@ -89,7 +90,7 @@ runtime helper is required.
 - `ci.yml`: full pinned tools and shared hk checks on Linux and Apple Silicon.
 - `release.yml`: shared CI checks must pass before archive jobs run.
 
-Archive jobs install only Zig and Python; publication installs only gh.
+Archive jobs install only Zig; publication installs only gh.
 These jobs set `MISE_AUTO_INSTALL=false`
 so nested tasks cannot install unrelated tools.
 

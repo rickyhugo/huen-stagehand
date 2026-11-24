@@ -39,7 +39,7 @@ jobs:
           version: "2026.10.17"
           install: false
           cache: false
-      - run: mise install --locked zig python
+      - run: mise install --locked zig
       - name: Build and inspect archive
         run: mise run package -- --target "${{ matrix.target }}" --smoke
       - uses: actions/upload-artifact@v6
