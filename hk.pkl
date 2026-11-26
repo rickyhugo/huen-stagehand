@@ -12,6 +12,8 @@ hooks {
   }
 }
 
+exclude = List("vendor", "vendored", "third_party", "third-party", ".zig-cache", "zig-out", "zig-pkg", "target", "src/repos/template")
+
 // Top-level steps also form the pre-commit hook. Steps in the "harness"
 // profile are slow and run only on demand: `mise run check:harness`.
 local harness = List("harness")
@@ -26,6 +28,8 @@ steps {
     check = "zig fmt --check {{files}}"
     fix = "zig fmt {{files}}"
   }
+  ["python-ast"] = Builtins.python_check_ast
+  ["shellcheck"] = Builtins.shellcheck
   ["zig-test"] {
     check = "mise run test"
     depends = "zig-fmt"
